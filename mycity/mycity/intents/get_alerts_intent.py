@@ -31,6 +31,14 @@ class Services(Enum):
     SCHOOLS = 'Schools'
     ALERT_HEADER = 'Alert header'
     
+# constants for scraping boston.gov                                                                   
+BOSTON_GOV = "https://www.boston.gov"
+SERVICE_NAMES = "cds-t t--upper t--sans m-b300"
+SERVICE_INFO = "cds-d t--subinfo"
+HEADER_1 = "t--upper t--sans lh--000 t--cb"
+HEADER_2 = "str str--r m-v300"
+HEADER_3 = "t--sans t--cb lh--000 m-b500"
+
 
 def get_alerts_intent(mycity_request):
     """
@@ -51,7 +59,6 @@ def get_alerts_intent(mycity_request):
     print("[dictionary with alerts scraped from boston.gov]:\n" + str(alerts))
     alerts = prune_normal_responses(alerts)
     print("[dictionary after pruning]:\n" + str(alerts))
-
     mycity_response.session_attributes = mycity_request.session_attributes
     mycity_response.card_title = mycity_request.intent_name
     mycity_response.reprompt_text = None
@@ -65,13 +72,14 @@ def alerts_to_speech_output(alerts):
     Return a string that contains all alerts or a message that city services
     are operating normally.
     """
-    if len(alerts) == 0:        # there are no alerts!
-        return "There are no alerts. City services are operating on their normal schedule."
-    else:
-        all_alerts = ""
+    all_alerts = ""
+    if Services.ALERT_HEADER.value in all_alerts:
         all_alerts += alerts.pop(Services.ALERT_HEADER.value)
-        for alert in alerts.values():
-            all_alerts += alert + ' '
+    for alert in alerts.values():
+        all_alerts += alert + ' '
+    if all_alerts.strip() == "":        # this is a kludgy fix for the {'alert header': ''} bug 
+        return "There are no alerts. City services are operating on their normal schedule."       
+    else:
         return all_alerts
         
 
@@ -97,23 +105,30 @@ def prune_normal_responses(service_alerts):
 
 
 def get_alerts():
+    """
+    Scrapes alerts from Boston.gov
+    Returns a dictionary that maps alert names to detailed alert
+    """
     # get boston.gov as an httpResponse object
-    url = request.urlopen("https://www.boston.gov")
+    url = request.urlopen(BOSTON_GOV)
     # feed the url object into beautiful soup
     soup = BeautifulSoup(url, "html.parser")
     url.close()
 
     # parse, sanitize returned strings, place in dictionary
-    services = [s.text.strip() for s in soup.find_all(class_="cds-t t--upper t--sans m-b300")]
-    service_info = [s_info.text.strip().replace(u'\xA0', u' ') for s_info in soup.find_all(class_="cds-d t--subinfo")]
+    services = [s.text.strip() for s in soup.find_all(class_= SERVICE_NAMES)]
+    service_info = [s_info.text.strip().replace(u'\xA0', u' ') for s_info in soup.find_all(class_= SERVICE_INFO)]
     alerts = {}
     for i in range(len(services)):
         alerts[services[i]] = service_info[i]
     # get alert header, if any (this is something like "Winter Storm warning")
     header = ""
-    if soup.find(class_="t--upper t--sans lh--000 t--cb") is not None:
-        header += soup.find(class_="t--upper t--sans lh--000 t--cb").text + '. '
-        header += soup.find(class_="str str--r m-v300").text + '. '
-        header += soup.find(class_="t--sans t--cb lh--000 m-b500").text + ' '
-    alerts[Services.ALERT_HEADER.value] = header.rstrip()
+    if soup.find(class_= HEADER_1) is not None:
+        header += soup.find(class_= HEADER_1).text + '. '
+        header += soup.find(class_= HEADER_2).text + '. '
+        header += soup.find(class_= HEADER_3).text + ' '
+    # weird bug where a blank header was appended to dictionary. this should
+    # prevent that
+    if header != '':
+        alerts[Services.ALERT_HEADER.value] = header.rstrip()
     return alerts

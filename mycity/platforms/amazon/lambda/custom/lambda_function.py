@@ -5,12 +5,13 @@ This module is the entry point for processing voice data from an Alexa device.
 """
 
 from mycity.mycity_request_data_model import MyCityRequestDataModel
-from mycity.mycity_controller import MyCityController
-
+from mycity.mycity_controller import execute_request
 
 def lambda_handler(event, context):
     """
     Translate the Amazon request to a MC_Request_Model and call main.
+    :param event: a dictionary containing event data
+    :param context: a LambdaContext object containing runtime info
     """
     print(
         "[module: lambda_function]",
@@ -20,8 +21,7 @@ def lambda_handler(event, context):
     )
 
     model = platform_to_mycity_request(event)
-    controller = MyCityController()
-    return mycity_response_to_platform(controller.execute_request(model))
+    return mycity_response_to_platform(execute_request(model))
 
 
 def platform_to_mycity_request(event):
