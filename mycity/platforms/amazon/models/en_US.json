@@ -69,6 +69,29 @@
                     ]
                 },
                 {
+                    "name": "PollingLocationIntent",
+                    "slots": [
+                        {
+                            "name": "Address",
+                            "type": "AMAZON.PostalAddress",
+                            "samples": [
+                                "My address is {Address}",
+                                "It's {Address}",
+                                "{Address}"
+                            ]
+                        }
+                    ],                                        
+                    "samples": [
+                        "where is the nearest polling location",
+                        "where is the nearest polling station",
+                        "where can I vote",
+                        "what is the closest polling location",
+                        "polling location",
+                        "polling station",
+                        "vote"                        
+                    ]
+                },
+                {
                     "name": "GetAlertsIntent",
                     "slots": [],
                     "samples": [

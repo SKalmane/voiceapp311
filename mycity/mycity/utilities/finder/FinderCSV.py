@@ -68,7 +68,7 @@ class FinderCSV(Finder):
         print('[method: FinderCSV.file_to_filtered_records]',
               'file_contents:',
               file_contents)
-        return list(filter(self._filter,
-                           csv.DictReader(file_contents.splitlines(), 
-                                          delimiter=',')))
+        reader = csv.DictReader(file_contents.splitlines(),
+                                delimiter=',')
+        return list(filter(self._filter, reader))
  
